@@ -29,7 +29,7 @@ typedef struct{
 // arithmetic operation outputs big integers of the correct size,
 // but that involves adding some additional logic, and we want to
 // keep our functions as simple as possible when converting to assembly.
-void compress(Bigint * a)
+void compress(Bigint *a)
 {
 	for( int i = a->n - 1; i >= 0; i-- )
 	{
@@ -123,10 +123,7 @@ Bigint sub_big(Bigint a, Bigint b)
 	int carry_this_time = 0;
 
 	for (int i = 0; i < c.n; i++) {
-		//printf("Setting digit %d\n", i);
-		//printf("a[i]: %d, b[i]: %d\n", a.digits[i], b.digits[i]);
 		if (i >= b.n) {
-			//printf("Stopping since I ran out of digits of b");
 			carry_this_time = 0;
 		} else {
 			if (carried_last_time) {
@@ -147,14 +144,9 @@ Bigint sub_big(Bigint a, Bigint b)
 				}
 			}
 		}
-		//printf("carry this time: %d, carried last time %d\n", carry_this_time, carried_last_time);
-		//printf("cdigits at 0: %d\n", c.digits[i]);
 		c.digits[i] = ((carry_this_time == 1) ? 10 : 0);
-		//printf("cdigits at 1: %d\n", c.digits[i]);
 		c.digits[i] -= carried_last_time;
-		//printf("cdigits at 2: %d\n", c.digits[i]);
 		c.digits[i] += a.digits[i] - ((i < b.n) ? b.digits[i] : 0);
-		//printf("cdigits at 3: %d\n", c.digits[i]);
 		carried_last_time = carry_this_time;
 	}
 
@@ -200,7 +192,7 @@ int compare_big(Bigint a, Bigint b)
 	{
 		if(      a.digits[i] > b.digits[i] )
 			return 1;
-		else if( a.digits[i] < b.digits[i] )
+		else if( a.digits[i] < sb.digits[i] )
 			return -1;
 	}
 
@@ -329,26 +321,6 @@ int is_small_prime(int p)
 // Scan through to p = 550, checking for prime Mp's along the way
 int main(void)
 {
-
-	printf("Starting quick sanity test\n");
-	Bigint five = digit_to_big(5);
-	shift_right(&five);
-	shift_right(&five);
-	shift_right(&five);
-	shift_left(&five);
-	printf("n: %d\n", five.n);
-	printf("digits: %d%d%d\n", five.digits[2], five.digits[1], five.digits[0]);
-	Bigint three = digit_to_big(3);
-	shift_right(&three);
-	printf("n: %d\n", three.n);
-	printf("digits: %d%d\n", three.digits[1], three.digits[0]);
-	Bigint c = sub_big(five, three);
-	printf("n: %d\n", c.n);
-	Bigint sub = digit_to_big(1);
-	c = digit_to_big(4);
-	sub = digit_to_big(1);
-	c = sub_big(c, sub);
-	printf("Result of 4 minus 1: %d \n", c.digits[0]);
 
 	// Test all p values, 2 to 550
 	for( int p = 2; p < 550; p++ )
