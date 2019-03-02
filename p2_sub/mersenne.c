@@ -31,7 +31,7 @@ typedef struct{
 // keep our functions as simple as possible when converting to assembly.
 void compress(Bigint *a)
 {
-	for( int i = a->n - 1; i >= 0; i-- )
+	for( int i = a->n - 1; i > 0; i-- )
 	{
 		if( a->digits[i] == 0 && i != 0 )
 			a->n -= 1;
@@ -55,10 +55,10 @@ Bigint digit_to_big(int a)
 // Prints out the big integer to stdout. Descending
 // order is used as we have stored the big integer
 // in little endian format.
-void print_big(Bigint b)
+void print_big(Bigint *b)
 {
-	for( int c = b.n -1; c >= 0; c--)
-		printf("%d", b.digits[c]);
+	for( int c = b->n - 1; c >= 0; c--)
+		printf("%d", b->digits[c]);
 	printf("\n");
 }
 
@@ -70,26 +70,25 @@ void print_big(Bigint b)
 Bigint mult_big(Bigint a, Bigint b)
 {
 	Bigint c;
-
 	// c can have (at most) the number of digits in a and b, added
 	c.n = a.n + b.n;
 
 	// Initialze all digits in c to zero
-	for( int i = 0; i < c.n; i++ )
+	for (int i = 0; i < c.n; i++)
 		c.digits[i] = 0;
 
 	// Perform basic multiplication, with some more efficient indexing
-	for( int i = 0; i < b.n; i++ )
+	for (int i = 0; i < b.n; i++)
 	{
 		int carry = 0;
 		int j;
-		for( j = i; j < a.n + i; j++ )
+		for (j = i; j < a.n + i; j++)
 		{
 			int val = c.digits[j] + (b.digits[i] * a.digits[j-i]) + carry;
 			carry       = val / 10;
 			c.digits[j] = val % 10;
 		}
-		if( carry > 0 )
+		if (carry > 0)
 		{
 			int val = c.digits[j] + carry;
 			carry       = val / 10;
@@ -99,8 +98,29 @@ Bigint mult_big(Bigint a, Bigint b)
 
 	// Trim any leading zeros
 	compress(&c);
-
 	return c;
+}
+
+//Helper function to add two Bigints
+void add_big(Bigint *a, Bigint *b, Bigint *c)
+{
+	if (a->n > b->n) {
+		c->n = a->n + 1;
+	} else {
+		c->n = b->n + 1;
+	}
+	for (int i = 0; i < c->n; i++) {
+		c->digits[i] = 0;
+	}
+	carrying = 0;
+	for (int i = 0; i < c->n; i++) {
+		int a_val = i < a->n ? a->digits[i] : 0
+		int b_val = i < b->n ? b->digits[i] : 0
+		int sum = a_val + b_val + carrying;
+		c->digits[i] = sum % 10;
+		carrying = sum / 10
+	}
+	compress(c);
 }
 
 // Computes c = a - b
@@ -192,7 +212,7 @@ int compare_big(Bigint a, Bigint b)
 	{
 		if(      a.digits[i] > b.digits[i] )
 			return 1;
-		else if( a.digits[i] < sb.digits[i] )
+		else if( a.digits[i] < b.digits[i] )
 			return -1;
 	}
 
@@ -270,7 +290,6 @@ Bigint mod_big(Bigint a, Bigint b)
 		// Once we've gone as far as we can go, reduce size of denominator
 		shift_left(&b);
 	}
-
 	return a;
 }
 
@@ -342,7 +361,7 @@ int main(void)
 				// Mp = 2^p - 1
 				Bigint Mp = pow_big(two, p);
 				Mp =  sub_big(Mp, one);
-				print_big(Mp);
+				print_big(&Mp);
 			}
 			else
 				printf("Mp not prime\n");
