@@ -64,7 +64,7 @@ void print_big(Bigint *b)
 
 // Computes c = a * b
 // Based on this algorithm by Matthew Crumley:
-// https://silentmatt.com/blog/2011/10/how-bigintegers-work-part-2-multiplication/
+// https://silentmatt.com/blog/2011/10 /how-bigintegers-work-part-2-multiplication/
 // which has javascript source code available here:
 // https://github.com/silentmatt/javascript-biginteger/blob/master/biginteger.js
 Bigint mult_big(Bigint a, Bigint b)
@@ -109,9 +109,7 @@ void add_big(Bigint *a, Bigint *b, Bigint *c)
 	} else {
 		c->n = b->n + 1;
 	}
-	for (int i = 0; i < c->n; i++) {
-		c->digits[i] = 0;
-	}
+
 	carrying = 0;
 	for (int i = 0; i < c->n; i++) {
 		int a_val = i < a->n ? a->digits[i] : 0
@@ -135,19 +133,17 @@ Bigint sub_big(Bigint a, Bigint b)
 
   //printf("C num digits: %d\n", c.n);
 
-	for (int i = 0; i < c.n; i++) {
-		c.digits[i] = 0;
-	}
-
 	int carried_last_time = 0;
 	int carry_this_time = 0;
 
 	for (int i = 0; i < c.n; i++) {
+		int a_val = a.digits[i];
+		int b_val = b.digits[i];
 		if (i >= b.n) {
 			carry_this_time = 0;
 		} else {
 			if (carried_last_time) {
-				if (a.digits[i] - 1 < b.digits[i]) {
+				if (a_val - 1 < b_val) {
 					//need to carry this time, but already set
 					carry_this_time = 1;
 				} else {
@@ -155,7 +151,7 @@ Bigint sub_big(Bigint a, Bigint b)
 					carry_this_time = 0;
 				}
 			} else {
-				if (a.digits[i] < b.digits[i]) {
+				if (a_val < b_val) {
 					//need to carry this time
 					carry_this_time = 1;
 				} else {
@@ -166,7 +162,7 @@ Bigint sub_big(Bigint a, Bigint b)
 		}
 		c.digits[i] = ((carry_this_time == 1) ? 10 : 0);
 		c.digits[i] -= carried_last_time;
-		c.digits[i] += a.digits[i] - ((i < b.n) ? b.digits[i] : 0);
+		c.digits[i] += a_val - ((i < b.n) ? b_val : 0);
 		carried_last_time = carry_this_time;
 	}
 
@@ -281,7 +277,7 @@ Bigint mod_big(Bigint a, Bigint b)
 	// without being larger than the numerator.
 
 	// Keep reducing size of denominator by factor of 10 until it equals its original size
-	while( compare_big(b,original_b) != -1 ) // tests if b >= original_b
+	while( compare_big(b, original_b) != -1 ) // tests if b >= original_b
 	{
 		// Keep subtracting off denominator from numerator (A)
 		while( compare_big(a,b) != -1 ) // tests if a >= b
@@ -312,7 +308,7 @@ int LLT(int p)
 
 	for( int i = 0; i < p - 2; i++ )
 	{
-		// s = ((s × s) − 2) mod Mp
+		//s = ((s × s) − 2) mod Mp
 		s = mult_big(s, s);
 		s = sub_big(s, two);
 		s = mod_big(s, Mp);
@@ -352,7 +348,7 @@ int main(void)
 			// Run LLT test of Mp
 			int is_prime = LLT(p);
 
-			if(is_prime)
+			if (is_prime)
 			{
 				printf("found prime Mp = ");
 				Bigint one  = digit_to_big(1);
