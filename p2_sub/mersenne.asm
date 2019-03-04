@@ -25,8 +25,11 @@ main:
     syscall
 
     #save ra
-    addi $sp, $sp, -4
+    addi $sp, $sp, -16
     sw $ra, ($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
 
     #sp test
     li $a0, 7
@@ -59,12 +62,12 @@ main:
     #compress test
     addi $sp, $sp, -1404
     li $t0, 4
-    lw $t0, ($sp) #set n to 4
+    sw $t0, ($sp) #set n to 4
     li $t0, 3
-    lw $t0, 4($sp) #create "0003" bigint
-    lw $0, 8($sp)
-    lw $0, 12($sp)
-    lw $0, 16($sp)
+    sw $t0, 4($sp) #create "0003" bigint
+    sw $0, 8($sp)
+    sw $0, 12($sp)
+    sw $0, 16($sp)
     move $a0, $sp #move to first parameter slot
     jal compress
     move $a0, $sp
@@ -80,6 +83,7 @@ main:
     li $a0, 3 #sets up parameters
     li $a1, 0
     li $a2, 1
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     jal digit_to_big
     move $s0, $v0 #save output bigint
     move $a0, $s0 #make parameter
@@ -98,6 +102,7 @@ main:
     li $a0, 0 #sets up parameters
     li $a1, 7
     li $a2, 2
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     jal digit_to_big
     move $s0, $v0 #save output bigint
     move $a0, $s0 #make parameter
@@ -114,10 +119,12 @@ main:
     syscall
 
     #comparison test
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 2
     li $a1, 4
     li $a2, 2
     jal digit_to_big
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     move $s0, $v0 #save 42 in s0
     li $a0, 0
     li $a1, 3
@@ -127,24 +134,27 @@ main:
 
     move $a0, $s0 #set first comparison parameter
     move $a1, $s1 #set second comparison parameter
-    jal compare_big
-    move $v0, $a0
+    jal compare_big #compare 42 to 30
+    move $a0, $v0
     li $v0, 1
     syscall
+    jal print_new_line
 
     move $a0, $s1 #set up parameters
     move $a1, $s0
-    jal compare_big
-    move $v0, $a0
+    jal compare_big #compare 30 to 42
+    move $a0, $v0
     li $v0, 1
     syscall
+    jal print_new_line
 
     move $a0, $s0 #set up parameters
     move $a1, $s0
-    jal compare_big
-    move $v0, $a0
+    jal compare_big #compare 42 to 42
+    move $a0, $v0
     li $v0, 1
     syscall
+    jal print_new_line
 
     addi $sp, $sp, 2808 #deallocate the last two big ints
 
@@ -153,21 +163,24 @@ main:
     syscall
 
     #multiply test
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 7 #put 7 in register
     li $a1, 0 #put 0 in ten register
     li $a2, 1 #put 1 digit
     jal digit_to_big
     move $s0, $v0
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 3 #put 3 in register
     li $a1, 0 #put 0 in ten register
     li $a2, 1 #put 1 digit
     jal digit_to_big
     move $s1, $v0
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 0 #put 0 in ten register
     li $a2, 1 #put 1 digit
     jal digit_to_big
-    move $s2, $v0 #temporary register
+    move $s2, $v0
     #test and print
     move $a0, $s0
     move $a1, $s1
@@ -175,18 +188,22 @@ main:
     jal mult_big
     move $a0, $s2
     jal print_big
+    jal print_new_line
     addi $sp, $sp, 4212 #dereference 3 big ints
     #setup 42 and 30
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 2 #put 2 in register
     li $a1, 4 #put 4 in ten register
     li $a2, 2 #put 2 digit
     jal digit_to_big
     move $s0, $v0
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 3 #put 3 in ten register
     li $a2, 2 #put 2 digit
     jal digit_to_big
     move $s1, $v0
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 0 #put 0 in ten register
     li $a2, 1 #put 1 digit
@@ -199,8 +216,10 @@ main:
     jal mult_big
     move $a0, $s2
     jal print_big
+    jal print_new_line
     addi $sp, $sp, 4212 #dereference 3 big ints
     #setup 10 million and 9 million
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 1 #put 1 in ten register
     li $a2, 2 #put 2 digit
@@ -213,11 +232,13 @@ main:
     jal shift_right
     jal shift_right
     jal shift_right
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 9 #put 9 in ten register
     li $a2, 2 #put 2 digit
     jal digit_to_big
     move $s1, $v0
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
     li $a1, 0 #put 0 in ten register
     li $a2, 1 #put 1 digit
@@ -229,6 +250,12 @@ main:
     jal shift_right
     jal shift_right
     jal shift_right
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
+    li $a0, 0 #put 0 in register
+    li $a1, 0 #put 0 in ten register
+    li $a2, 1 #put 1 digit
+    jal digit_to_big
+    move $s2, $v0 #temporary register
     #test and print
     move $a0, $s0
     move $a1, $s1
@@ -236,6 +263,7 @@ main:
     jal mult_big
     move $a0, $s2
     jal print_big
+    jal print_new_line
     addi $sp, $sp, 4212
 
 
@@ -245,6 +273,7 @@ main:
 
     #power test
     #create bigint 3
+    addi $sp, $sp, -2808 #allocate size of bigint on stack
     li $a0, 3
     li $a1, 0
     li $a2, 1
@@ -265,6 +294,7 @@ main:
     addi $sp, $sp, 2808 #reset stack pointer
 
     #create bigint 42
+    addi $sp, $sp, -2808 #allocate size of bigint on stack
     li $a0, 2
     li $a1, 4
     li $a2, 1
@@ -288,6 +318,7 @@ main:
     la $a0, sub_test
     syscall
     #create bigints 7, 3, and an empty one
+    addi $sp, $sp, -4212 #allocate size of bigint on stack
     li $a0, 7
     li $a1, 0
     li $a2, 1
@@ -313,6 +344,7 @@ main:
     addi $sp, $sp, 4212 #free allocated stack space
 
     #create bigints 42, 12, and an empty one
+    addi $sp, $sp, -4212 #allocate size of bigint on stack
     li $a0, 2
     li $a1, 3
     li $a2, 2
@@ -338,6 +370,7 @@ main:
     addi $sp, $sp, 4212 #free allocated stack space
 
     #create bigints 9 billion, 7654321, and an empty one
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0
     li $a1, 9
     li $a2, 2
@@ -372,6 +405,7 @@ main:
     li $a1, 1
     li $a2, 2
     move $s1, $sp #save 7654321
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0
     li $a1, 0
     li $a2, 1
@@ -391,6 +425,7 @@ main:
     la $a0, mod_test
     syscall
     #create bigints 7, 3, and an empty one
+    addi $sp, $sp, -4212 #allocate size of bigint on stack
     li $a0, 7
     li $a1, 0
     li $a2, 1
@@ -416,6 +451,7 @@ main:
     addi $sp, $sp, 4212 #free allocated stack space
 
     #create bigints 42, 12, and an empty one
+    addi $sp, $sp, -4212 #allocate size of bigint on stack
     li $a0, 2
     li $a1, 3
     li $a2, 2
@@ -441,6 +477,7 @@ main:
     addi $sp, $sp, 4212 #free allocated stack space
 
     #create bigints 9 billion, 7654321, and an empty one
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0
     li $a1, 9
     li $a2, 2
@@ -475,6 +512,7 @@ main:
     li $a1, 1
     li $a2, 2
     move $s1, $sp #save 7654321
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0
     li $a1, 0
     li $a2, 1
@@ -493,6 +531,7 @@ main:
     li $v0, 4
     la $a0, LLT_test
     syscall
+    addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #create empty bigint
     li $a1, 0
     li $a2, 1
@@ -546,7 +585,6 @@ is_small_prime: #takes in integer p. Checks if p is prime
 
 digit_to_big:
         .text
-        addi $sp, $sp, -1404 #allocate size of bigint on stack
         sw $a2, ($sp) #b.n = parameter n
         sw $a0, 4($sp) #b.digits[0] = a (ones digit)
         sw $a1, 8($sp) #b.digits[1] = a (twos digit)
@@ -587,31 +625,29 @@ compress: #takes in pointer to address a.
 shift_right:
               .text
               lw $t0 ($a0) #i = a->n. grab a->n and store in $t0
-              addi $t1, $a0, 4 #put address a.digits[0] in $t1
               addi $t2, $t0, 1 #store a->n += 1, while we have this value in register.
               sw $t2, ($a0) #writes new a->n value to memory
       .loop3: sll $t2, $t0, 2 #convert i to byte offset, load into register t3
               addi $t0, $t0, -1 #i = i - 1.
               sll $t3, $t0, 2 #convert i - 1 to byte offset, load into register t4
-              add $t4, $t1, $t3 #calculate address of a->digits[i - 1]
-              lw $t3, ($t4) #a->digits[i - 1] (no longer need i - 1, so use it's register)
-              add $t4, $t1, $t2 #calculate address of a->digits[i]
-              sw $t3, ($t4) #a->digits[i] = a->digits[i-1]
+              add $t4, $a0, $t3 #calculate address of a->digits[i - 1]
+              lw $t3, 4($t4) #a->digits[i - 1] (no longer need i - 1, so use it's register)
+              add $t4, $a0, $t2 #calculate address of a->digits[i]
+              sw $t3, 4($t4) #a->digits[i] = a->digits[i-1]
               bne $t0, $0, .loop3 #jump back up if i is not zero
-              sw $0, ($t1) #set a->digits[$t1] to be 0.
+              sw $0, 4($a0) #set a->digits[$t1] to be 0.
               jr $ra #exit
 
 shift_left:
           .text
           lw $t0 ($a0) #grab a->n and store in $t0
-          lw $t1 4($a1) #put address a[0] in $t1
           move $t2, $0 #i = 0
   .loop4: sll $t3, $t2, 2 #shifts i into byte offset
           addi $t2, $t2, 1 #i += 1
           sll $t4, $t2, 2 #shifts i + 1 into byte offset
-          add $t4, $t4, $t1 #calculate address of a->digits[i + 1], store in t4
+          add $t4, $t4, $a0 #calculate address of a->digits[i + 1], store in t4
           lw $t4, ($t4) #save value of a->digits[i + 1] in t3
-          add $t3, $t3, $t1 #calculate address of a->digits[i], store in t3
+          add $t3, $t3, $a0 #calculate address of a->digits[i], store in t3
           sw $t4, ($t3) #a->digits[i] = a->digits[i + 1]
           bne $t0, $t2, .loop4 # if i != a->n, jump back up to loop
           addi $t0, $t0, -1 #Calculate a->n - 1
@@ -625,33 +661,32 @@ shift_left:
           jr $ra
 
 
-compare_big: #pointer to a in a0, pointer to b in b0
+compare_big: #pointer to a in a0, pointer to b in a1
             .text
-            sw $t0, ($a0) #a.n
-            sw $t1, ($a1) #b.n
+            lw $t0, ($a0) #a.n
+            lw $t1, ($a1) #b.n
             beq $t0, $t1, .equal #if the two are equal, jump to the loop code
             slt $t2, $t0, $t1 #if a.n is less than b.n, put 1 into t2, otherwise 0
-            bne $t2, $0, .no #Is a.n less than b.n, jump to less
+            bne $t2, $0, .n_one #Is a.n less than b.n, jump to less
     .one:  li $v0, 1 #a.n is greater than b.n, return 1
-            j exit #jump to end
-   .n_one:  addi $v0, $0, -1 #a.n is less than b.n, return -1
-            j exit #jump to end
-    .equal: addi $t1, $a0, 4 #save base address of a.digits
-            addi $t2, $a1, 4 #save base address of b.digits
-   .loop5:  addi $t0, $t0, -1 #i = a.n - 1
-            sll $t5, $t0, 2
-            add $t3, $t5, $t1 #address of a.digits[0 + i]
-            add $t4, $t5, $t2 #address of b.digits[0 + i]
-            sw $t3, ($t3) #value of a.digits[0 + i]
-            sw $t4, ($t4) #value of b.digits[0 + i]
-
-            bne $t3, $t4, .notequal #if a.digits[i] == b.digits[i], skip back to the top
-            bne $t0, $0, .loop5 #if i != 0, jump back up to start of loop
+            j .exit #jump to end
+   .n_one:  li $v0, -1 #a.n is less than b.n, return -1
+            j .exit #jump to end
+    .equal: addi $t0, $t0, -1 #i = a.n - 1
+    .loop5: sll $t5, $t0, 2
+            add $t3, $t5, $a0 #address of a.digits[0 + i] - 4
+            add $t4, $t5, $a1 #address of b.digits[0 + i] - 4
+            lw $t3, 4($t3) #value of a.digits[0 + i]
+            lw $t4, 4($t4) #value of b.digits[0 + i]
+            bne $t3, $t4, .notequal #if a.digits[i] != b.digits[i], compare the two
+            addi $t0, $t0, -1 #i--
+            slt $t1, $t0, $0 #put 1 in t1 if i is less than 0
+            beq $t1, $0, .loop5 #if i >= 0, jump back up to start of loop
             move $v0, $0 #set return value to zero
             jr $ra #exit
-.notequal:  slt $t5, $t3, $t4
-            bne $t5, $0, .less
-            j .more
+.notequal:  slt $t5, $t3, $t4 #if a < b, put 1 in t5.
+            bne $t5, $0, .n_one #a less than b, return -1
+            j .one #a is greater than b, return 1
     .exit:  jr $ra #exit
 
 
@@ -723,8 +758,8 @@ mult_big:
 #solution. Use temporary bigint. Put that value into  address
 #c at the very end. Issue is that b will be lost
             .text
-            sw $t0, ($a0) #a->n
-            sw $t1, ($a1) #b->n
+            lw $t0, ($a0) #a->n
+            lw $t1, ($a1) #b->n
             add $t2, $t0, $t1 # c->n
             sw $t2, ($a2) #save c->n value to memory.
             #clear out c
@@ -750,10 +785,10 @@ mult_big:
             add $t7, $t7, $a1 #address of b.digits[i] - 4
             lw $t7, 4($t7) #value at b.digits[i]
             mult $t6, $t7 #b.digits[i] * a.digits[j - i]
-            mflo $6 #get result
+            mflo $t6 #get result
             add $t6, $t4, $t6 #carry + (b.digits[i] * a.digits[j - i])
             sll $t7, $t5, 2 #set t7 to byte offset of j
-            add $t7, $a2, $t7 #calculate address of c.digits[i] - 4
+            add $t7, $a2, $t7 #calculate address of c.digits[j] - 4
             lw $t2, 4($t7) #get value at c.digits[j]
             add $t6, $t2, $t6 #c.digits + (b.digits[i] * a.digits[j - i]) + carry
             li $t2, 10 #put ten in s0
@@ -764,13 +799,15 @@ mult_big:
             addi $t5, $t5, 1 #j++
             bne $t5, $a3, .j_loop
             #end of j loop
-            slt $t5, $0, $t4 #if carry > 0, t5 will be 1
-            beq $t5, $0, .finish_up
+            beq $0, $t4, .finish_up #if carry = 0, we're done with this loop of i
+            sll $t7, $t5, 2 #set t7 to be byte offset of this new j
+            add $t7, $a2, $t7
             lw $t2, 4($t7) #get the value of c.digits[j]
             add $t5, $t2, $t4 #val = c.digits[j] + carry
             li $t6, 10 #sets t6 to ten
-            div $t5, $t6 #val / 10
+            div $t5, $t6 #val / and % 10
             mfhi $t6 #val % 10
+            mflo $t4 #carry = val / 10
             sw $t6, 4($t7) #c.digits[j] = val % 10
 .finish_up: addi $t3, $t3, 1 #i++
             bne $t3, $t1, .i_loop #If i < b.n, restart loop
