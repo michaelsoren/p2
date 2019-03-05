@@ -110,13 +110,13 @@ void add_big(Bigint *a, Bigint *b, Bigint *c)
 		c->n = b->n + 1;
 	}
 
-	carrying = 0;
+	int carrying = 0;
 	for (int i = 0; i < c->n; i++) {
-		int a_val = i < a->n ? a->digits[i] : 0
-		int b_val = i < b->n ? b->digits[i] : 0
+		int a_val = i < a->n ? a->digits[i] : 0;
+		int b_val = i < b->n ? b->digits[i] : 0;
 		int sum = a_val + b_val + carrying;
 		c->digits[i] = sum % 10;
-		carrying = sum / 10
+		carrying = sum / 10;
 	}
 	compress(c);
 }
@@ -140,29 +140,18 @@ Bigint sub_big(Bigint a, Bigint b)
 		int a_val = a.digits[i];
 		int b_val = b.digits[i];
 		if (i >= b.n) {
-			carry_this_time = 0;
+			b_val = 0;
+		}
+		if (a_val - carried_last_time < b_val) {
+			//need to carry this time, but already set
+			carry_this_time = 1;
 		} else {
-			if (carried_last_time) {
-				if (a_val - 1 < b_val) {
-					//need to carry this time, but already set
-					carry_this_time = 1;
-				} else {
-					//no need to carry this time
-					carry_this_time = 0;
-				}
-			} else {
-				if (a_val < b_val) {
-					//need to carry this time
-					carry_this_time = 1;
-				} else {
-					//no need to carry this time, but already set
-					carry_this_time = 0;
-				}
-			}
+			//no need to carry this time
+			carry_this_time = 0;
 		}
 		c.digits[i] = ((carry_this_time == 1) ? 10 : 0);
 		c.digits[i] -= carried_last_time;
-		c.digits[i] += a_val - ((i < b.n) ? b_val : 0);
+		c.digits[i] += a_val - b_val;
 		carried_last_time = carry_this_time;
 	}
 
@@ -180,7 +169,6 @@ Bigint pow_big(Bigint a, int p )
 	// Just multiply by itself p-1 times
 	for( int i = 1; i < p; i++ )
 		b = mult_big(b, a);
-
 	return b;
 }
 
