@@ -101,26 +101,6 @@ Bigint mult_big(Bigint a, Bigint b)
 	return c;
 }
 
-//Helper function to add two Bigints
-void add_big(Bigint *a, Bigint *b, Bigint *c)
-{
-	if (a->n > b->n) {
-		c->n = a->n + 1;
-	} else {
-		c->n = b->n + 1;
-	}
-
-	int carrying = 0;
-	for (int i = 0; i < c->n; i++) {
-		int a_val = i < a->n ? a->digits[i] : 0;
-		int b_val = i < b->n ? b->digits[i] : 0;
-		int sum = a_val + b_val + carrying;
-		c->digits[i] = sum % 10;
-		carrying = sum / 10;
-	}
-	compress(c);
-}
-
 // Computes c = a - b
 // Simple elementary subtraction. Be sure that
 // the return value (c) has been compressed so it
@@ -131,15 +111,16 @@ Bigint sub_big(Bigint a, Bigint b)
 
 	c.n = a.n; //Has at most a.n digits
 
-  //printf("C num digits: %d\n", c.n);
-
+	//These two keep track of information about carrying
 	int carried_last_time = 0;
 	int carry_this_time = 0;
 
 	for (int i = 0; i < c.n; i++) {
+		//grabs values we're subtracting
 		int a_val = a.digits[i];
 		int b_val = b.digits[i];
 		if (i >= b.n) {
+			//0's out junk values of b
 			b_val = 0;
 		}
 		if (a_val - carried_last_time < b_val) {
@@ -149,9 +130,12 @@ Bigint sub_big(Bigint a, Bigint b)
 			//no need to carry this time
 			carry_this_time = 0;
 		}
+		/*Do the math in 3 steps to make translation to
+		  assembly easier*/
 		c.digits[i] = ((carry_this_time == 1) ? 10 : 0);
 		c.digits[i] -= carried_last_time;
 		c.digits[i] += a_val - b_val;
+		//update last time
 		carried_last_time = carry_this_time;
 	}
 

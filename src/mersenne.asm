@@ -3,6 +3,7 @@
 
   .globl main
 
+#data are just the test print strings that I'm using
   .data
 start:         .asciiz   "\nStarting Tests\n"
 sp_test:       .asciiz   "\nSmall Prime Tests\n"
@@ -20,18 +21,115 @@ mer_scan:        .asciiz "\nMersenne scan\n"
 
   .text
 main:
+    #print starting statement
     li $v0, 4
     la $a0, start
     syscall
 
-    #save ra
+    #save ra and callee saved registers
     addi $sp, $sp, -16
     sw $ra, ($sp)
     sw $s0, 4($sp)
     sw $s1, 8($sp)
     sw $s2, 12($sp)
 
-    #sp test
+    move $a0, $v0
+    li $v0, 4
+    la $a0, sp_test
+    syscall
+    jal test_is_small_prime
+
+    li $v0, 4
+    la $a0, cmpress_test
+    syscall
+    jal test_compress
+
+    li $v0, 4
+    la $a0, sr_test
+    syscall
+    jal test_shift_right
+
+    li $v0, 4
+    la $a0, sl_test
+    syscall
+    jal test_shift_left
+
+    li $v0, 4
+    la $a0, cmp_test
+    syscall
+    jal test_compare_big
+
+    li $v0, 4
+    la $a0, mult_test
+    syscall
+    jal test_mult_big
+
+    #Print out description, then run the test
+    li $v0, 4
+    la $a0, pow_test
+    syscall
+    jal test_pow_big
+
+    #Print out description, then run the test
+    li $v0, 4
+    la $a0, sub_test
+    syscall
+    jal test_sub_big
+
+    #Print out description, then run the test
+    li $v0, 4
+    la $a0, mod_test
+    syscall
+    jal test_mod_big
+
+    #Print out description, then run the test
+    li $v0, 4
+    la $a0, LLT_test
+    syscall
+    jal test_LLT
+
+    #Print out description, then run the test
+    li $v0, 4
+    la $a0, mer_scan
+    syscall
+    jal mersenne_scan
+
+    #restore ra and callee saved registers
+    lw $ra, ($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    addi $sp, $sp, -16 #shift stack pointer back
+
+    li $v0, 10 #exit gracefully
+    syscall
+
+#Procedure: print_new_line
+#Args: None
+#Return: No value, just prints new line
+#Description: Just prints new line out.
+print_new_line:
+    .data
+new_line:      .asciiz   "\n"
+                .text
+                li $v0, 4
+                la $a0, new_line
+                syscall
+                jr $ra
+
+#############################################################
+### Below are my mips implementations of testing helpers  ###
+#############################################################
+
+#Procedure: test_is_small_prime
+#Args: None
+#Return: No value
+#Description: Setup and run the small prime test
+test_is_small_prime:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     li $a0, 7
     jal is_small_prime
     move $a0, $v0 #move the output to the first parameter
@@ -46,7 +144,6 @@ main:
     syscall #call the print statement
     jal print_new_line
 
-
     li $a0, 127
     jal is_small_prime
     move $a0, $v0 #move the output to the first parameter
@@ -54,12 +151,20 @@ main:
     syscall #call the print statement
     jal print_new_line
 
-    move $a0, $v0
-    li $v0, 4
-    la $a0, cmpress_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    #compress test
+
+#Procedure: test_compress
+#Args: None
+#Return: No value
+#Description: Set up and run the compress test
+test_compress:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     addi $sp, $sp, -1404
     li $t0, 4
     sw $t0, ($sp) #set n to 4
@@ -75,11 +180,20 @@ main:
     jal print_new_line
     addi $sp, $sp, 1404 #remove stack allocated big int
 
-    li $v0, 4
-    la $a0, sr_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    #shift right test
+
+#Procedure: test_shift_right
+#Args: None
+#Return: None
+#Description: Setup and run the shift_right test
+test_shift_right:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     li $a0, 3 #sets up parameters
     li $a1, 0
     li $a2, 1
@@ -92,13 +206,23 @@ main:
     jal shift_right
     move $a0, $s0
     jal print_big
+    jal print_new_line
     addi $sp, $sp, 1404 #dereference bigint
 
-    li $v0, 4
-    la $a0, sl_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    #shift left test
+
+#Procedure: test_shift_left
+#Args: None
+#Return: No value
+#Description: Setup and run the shift_left test
+test_shift_left:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     li $a0, 0 #sets up parameters
     li $a1, 7
     li $a2, 2
@@ -112,13 +236,23 @@ main:
     jal shift_left
     move $a0, $s0
     jal print_big
+    jal print_new_line
     addi $sp, $sp, 1404 #shift the temp big off the stack
 
-    li $v0, 4
-    la $a0, cmp_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    #comparison test
+
+#Procedure: test_compare_big
+#Args: None
+#Return: No value
+#Description: Set up and run the compare test
+test_compare_big:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 2
     li $a1, 4
@@ -155,14 +289,25 @@ main:
     li $v0, 1
     syscall
     jal print_new_line
-
     addi $sp, $sp, 2808 #deallocate the last two big ints
 
-    li $v0, 4
-    la $a0, mult_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    #multiply test
+
+#Procedure: test_mult_big
+#Args: None
+#Return: No value
+#Description: Set up and test mult
+test_mult_big:
+    .text
+    addi $sp, $sp, -16 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 7 #put 7 in register
     li $a1, 0 #put 0 in ten register
@@ -190,6 +335,7 @@ main:
     jal print_big
     jal print_new_line
     addi $sp, $sp, 4212 #dereference 3 big ints
+
     #setup 42 and 30
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 2 #put 2 in register
@@ -218,6 +364,7 @@ main:
     jal print_big
     jal print_new_line
     addi $sp, $sp, 4212 #dereference 3 big ints
+
     #setup 10 million and 9 million
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #put 0 in register
@@ -238,12 +385,6 @@ main:
     li $a2, 2 #put 2 digit
     jal digit_to_big
     move $s1, $v0
-    addi $sp, $sp, -1404 #allocate size of bigint on stack
-    li $a0, 0 #put 0 in register
-    li $a1, 0 #put 0 in ten register
-    li $a2, 1 #put 1 digit
-    jal digit_to_big
-    move $s2, $v0 #temporary register
     move $a0, $s1
     jal shift_right
     jal shift_right
@@ -266,10 +407,22 @@ main:
     jal print_new_line
     addi $sp, $sp, 4212
 
+    lw $ra, ($sp) #restore ra
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    addi $sp, $sp, 16 #shift stack pointer back up
+    jr $ra #exit
 
-    li $v0, 4
-    la $a0, pow_test
-    syscall
+
+#Procedure: test_pow_big
+#Args: None
+#Return: No value
+#Description: Sets up and runs the pow test
+test_pow_big:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
 
     #power test
     #create bigint 3
@@ -288,7 +441,7 @@ main:
     #test and print
     move $a0, $s0
     move $a1, $s1 #used as empty value
-    li $a2, 2
+    li $a2, 4
     jal pow_big
     move $a0, $s1
     jal print_big
@@ -318,9 +471,20 @@ main:
     jal print_new_line
     addi $sp, $sp, 2808
 
-    li $v0, 4
-    la $a0, sub_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
+
+
+#Procedure: test_sub_big
+#Args: None
+#Return: No value.
+#Description: Sets up and runs the sub test
+test_sub_big:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     #create bigints 7, 3, and an empty one
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 7
@@ -387,7 +551,7 @@ main:
     jal digit_to_big
     move $s0, $v0
     move $a0, $s0
-    jal shift_right
+    jal shift_right #create 9 billion
     jal shift_right
     jal shift_right
     jal shift_right
@@ -429,9 +593,20 @@ main:
     jal print_new_line
     addi $sp, $sp, 4212 #free allocated stack space
 
-    li $v0, 4
-    la $a0, mod_test
-    syscall
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
+
+
+#Procedure: test_mod_big
+#Args: None
+#Return: No value
+#Description: Sets up and runs the mod test
+test_mod_big:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     #create bigints 7, 3, and an empty one
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 7
@@ -498,7 +673,7 @@ main:
     jal digit_to_big
     move $s0, $v0
     move $a0, $s0
-    jal shift_right
+    jal shift_right #shift 90 all the way right to 9 billion
     jal shift_right
     jal shift_right
     jal shift_right
@@ -506,7 +681,7 @@ main:
     jal shift_right
     jal shift_right
     jal shift_right #9 with 9 zeroes
-    addi $sp, $sp, -1404 #create 7654321
+    addi $sp, $sp, -1404 #create space for 7654321
     li $t0, 7
     sw $t0, ($sp) #set n to 7
     li $t0, 1
@@ -524,7 +699,7 @@ main:
     li $t0, 7
     sw $t0, 28($sp)
     move $s1, $sp #save 7654321
-    addi $sp, $sp, -1404 #allocate size of bigint on stack
+    addi $sp, $sp, -1404 #allocate size of bigint on stack.
     li $a0, 0
     li $a1, 0
     li $a2, 1
@@ -540,10 +715,20 @@ main:
     jal print_new_line
     addi $sp, $sp, 4212 #free allocated stack space
 
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    li $v0, 4
-    la $a0, LLT_test
-    syscall
+
+#Procedure: test_LLT
+#Args: None
+#Return: No value
+#Description: Sets up and runs the LLT test
+test_LLT:
+    .text
+    addi $sp, $sp, -4 #shift stack pointer down
+    sw $ra, ($sp) #save ra
+
     addi $sp, $sp, -1404 #allocate size of bigint on stack
     li $a0, 0 #create empty bigint
     li $a1, 0
@@ -574,36 +759,34 @@ main:
     jal print_new_line
     addi $sp, $sp, 1404 #remove stack allocated for big int
 
-    li $v0, 4
-    la $a0, mersenne_scan
-    syscall
-    jal mersenne_scan
+    lw $ra, ($sp) #restore ra
+    addi $sp, $sp, 4 #shift stack pointer back up
+    jr $ra #exit
 
-    li $v0, 10
-    syscall
 
-print_new_line:
-    .data
-new_line:      .asciiz   "\n"
-                .text
-                li $v0, 4
-                la $a0, new_line
-                syscall
-                jr $ra
+#############################################################
+### Below are my mips implementations of needed functions ###
+#############################################################
+
 
 is_small_prime: #takes in integer p. Checks if p is prime
             .text
             li $t0, 2 #set i = 2
             addi $t1, $a0, -1 #save the value of p-1
+            slt $t2, $t0, $t1 #set t2 to 1 if i is less than p - 1
+            bne $t2, $0, .loop0 #if meets the condition, start the loop
+            #otherwise, we have a value of 3 or less. Return 1
+            addi $v0, $0, 1 #loads r.v. of 1 into register
+            jr $ra #leave
     .loop0: div $a0, $t0 #p % i
             mfhi $t3 #get the mod value
             bne $t3, $0, .not_done0 #compares t3 to the zero register,
                                 #jumps past exit if not done
             move $v0, $0 #zeroes the return value
             jr $ra #return from this subroutine
-.not_done0: addi $t0, $t0 1
-            bne $t0, $t1 .loop0 #If not equal, have not reached end of for loop yet.
-            addi $v0, $0 1 #loads r.v. of 1 into register
+.not_done0: addi $t0, $t0, 1
+            bne $t0, $t1, .loop0 #If not equal, have not reached end of for loop yet.
+            addi $v0, $0, 1 #loads r.v. of 1 into register
             jr $ra #exit the function
 
 
@@ -1153,10 +1336,9 @@ LLT: #takes in c and p
 
 mersenne_scan:
             .data
-            testing_p:     .asciiz    "\nTesting p = "
-            found_prime:   .asciiz    "found prime MP ="
-            n_found_prime: .asciiz    "Mp not prime\n"
-            new_line_scn:  .asciiz    "\n"
+            testing_p:     .asciiz    "Testing p = "
+            found_prime:   .asciiz    " found prime Mp = "
+            n_found_prime: .asciiz    " Mp not prime"
 
                     .text
                     addi $sp, $sp, -24
@@ -1166,7 +1348,7 @@ mersenne_scan:
                     sw $s1, 8($sp)
                     sw $s0, 4($sp)
                     sw $ra, ($sp)
-                    li $s0, 2 #p = 2
+                    li $s0, 3 #p = 3
                     li $s1, 550 #save 550
 
                     #0th, create the two bigints I'll need on the stack. save in s registers
@@ -1178,7 +1360,7 @@ mersenne_scan:
                     addi $sp, $sp, -1404 #allocate size of bigint on stack. This is b
                     sw $t0, ($sp) #b.n = 1
                     li $t0, 2 # Put 2 into temporary register
-                    sw $t0, 4($sp) #b.digits[0] = 1
+                    sw $t0, 4($sp) #b.digits[0] = 2
                     move $s6, $sp #saves pointer to b
                     addi $sp, $sp, -1404 #allocate size of bigint on stack. This is c
                     move $s7, $sp #saves pointer to c
@@ -1187,35 +1369,42 @@ mersenne_scan:
            .loop10: move $a0, $s0 #load p into a0
                     jal is_small_prime #call small prime
                     beq $v0, $0 .prep_for_restart
-
-                    #Then run LLT to get the primeness test
+                    li $v0, 4 #set string print code
+                    la $a0, testing_p #setup testing p string
+                    syscall #print it
+                    move $a0, $s0
+                    li $v0, 1 #set int print code
+                    syscall #print it out
+                    #Then run LLT to get the primeness test on 2^p - 1
                     move $a0, $s7 #puts c as the first parameter
                     move $a1, $s0 #puts p as the second parameter
                     jal LLT #call llt
                     #then check return value
                     beq $v0, $0, .not_prime
                     li $v0, 4 #set string print code
-                    la $a0,  found_prime #load found prime string
+                    la $a0, found_prime #load found prime string
                     syscall #print
                     move $a0, $s6 #move b into the first parameter slot
                     move $a1, $s7 #move c (output) into second parameter slot
                     move $a2, $s0 #move p into third parameter slot
                     jal pow_big
-                    move $a0, $a2 #move c into first parameter slot
-                    move $a1, $a0 #move a into second parameter slot
-                    #keep c in the third parameter slot
+                    move $a0, $s7 #move c into first parameter slot
+                    move $a1, $s5 #move a into second parameter slot
+                    move $a2, $s7 #move c into third parameter slot as output
                     jal sub_big
                     move $a0, $s7
                     jal print_big
-                    li $v0, 4 #set string print code
-                    la $a0, new_line_scn #load \n string
-                    syscall #print
+                    jal print_new_line #print new line here so I don't have issues
+                    #with tons of empty lines printed for non-primes
                     j .prep_for_restart #jump over not_prime print
         .not_prime: li $v0, 4 #set string print code
                     la $a0, n_found_prime #load did not find prime string
                     syscall #print
+                    jal print_new_line #print new line here so I don't have issues
+                    #with tons of empty lines printed for non-primes
  .prep_for_restart: addi $s0, $s0, 1
                     bne $s0, $s1, .loop10
+
                     #reset stack
                     addi $sp, $sp, 4212 #dereference a,b,c
                     lw $ra, ($sp) #reset ra and all the old stack values
