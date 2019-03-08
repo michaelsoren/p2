@@ -121,6 +121,8 @@ new_line:      .asciiz   "\n"
 ### Below are my mips implementations of testing helpers  ###
 #############################################################
 
+#All tests are in line with the tests asked for in the writeup
+
 #Procedure: test_is_small_prime
 #Args: None
 #Return: No value
@@ -768,7 +770,10 @@ test_LLT:
 ### Below are my mips implementations of needed functions ###
 #############################################################
 
-
+#Procedure: is_small_prime
+#Args: Takes in an allocated bigint to check for primeness
+#Return: 0 if not prime, 1 if prime
+#Description: Basic for loop to check for primeness
 is_small_prime: #takes in integer p. Checks if p is prime
             .text
             li $t0, 2 #set i = 2
@@ -790,6 +795,14 @@ is_small_prime: #takes in integer p. Checks if p is prime
             jr $ra #exit the function
 
 
+#Procedure: digit_to_big
+#Args: The first digit (little endian) is first, second digit (little endian)
+#      is second, and the length of the bigint (either 1 or 2) is third.
+#Return: address of b (it's just the current value of $sp)
+#Description: Before this is called, the stack pointer should be shifted
+#             down to fit the new big int. This procedure loads in the
+#             required info into the bigint. It does 2 digits, rather than
+#             one, since that really helps make the tests easier to run.
 digit_to_big:
         .text
         sw $a2, ($sp) #b.n = parameter n
@@ -798,7 +811,13 @@ digit_to_big:
         move $v0, $sp #return allocated address for b
         jr $ra
 
-print_big: #takes in and prints out a big integer in little endian format
+
+#Procedure: print_big
+#Args: address of bigint to print
+#Return: No value
+#Description: Takes a given big int, then iterates over it starting at the
+#             end. Prints out each digit, from highest to lowest
+print_big:
         .text
         lw $t0 ($a0) #load b.n from memory. c = b->n
         addi $t1, $a0, 4 #Load address of b.digits[0]
@@ -811,6 +830,13 @@ print_big: #takes in and prints out a big integer in little endian format
         bne $t0, $0, .loop1 #if c is equal to zero, I know I'm done
         jr $ra #exit the function
 
+
+#Procedure: compress
+#Args: Address to be compressed
+#Return: No value
+#Description: Compresses down the given bigint at the address
+#             by adjusting the bigint size, n. The procedure
+#             essentially removes leading zeros by counting them.
 compress: #takes in pointer to address a.
             .text
             lw $t0, ($a0) #$t0 = a.n. a is an address from memory
@@ -829,6 +855,11 @@ compress: #takes in pointer to address a.
       #note that I don't have to modify digits, changing n suffices
 
 
+#Procedure: shift_right
+#Args: address that should be shifted left
+#Return: No value
+#Description: Adds a 0 onto the end of the bigint and shifts
+#             the other values over to the right.
 shift_right:
               .text
               lw $t0 ($a0) #i = a->n. grab a->n and store in $t0
@@ -845,6 +876,11 @@ shift_right:
               sw $0, 4($a0) #set a->digits[$t1] to be 0.
               jr $ra #exit
 
+
+#Procedure: shift_left
+#Args: address of bigint to shift left
+#Return: No value
+#Description: Shifts every value of bigint to left, effectively dividing by 10
 shift_left:
           .text
           lw $t0 ($a0) #grab a->n and store in $t0
@@ -868,6 +904,10 @@ shift_left:
           jr $ra
 
 
+#Procedure: compare_big
+#Args: two bigint addresses, one stored in a and the other in b
+#Return: -1 if a is less than b, 0 if equal, and 1 if a is greater than b
+#Description: Sets up and runs the mod test
 compare_big: #pointer to a in a0, pointer to b in a1
             .text
             lw $t0, ($a0) #a.n
@@ -897,73 +937,15 @@ compare_big: #pointer to a in a0, pointer to b in a1
     .exit:  jr $ra #exit
 
 
-add_big:
-            .text
-            sw $t0, ($a0) #a->n
-            sw $t1, ($a1) #b->n
-            addi $t5, $a0, 4 #address of a[0]
-            addi $t6, $a1, 4 #address of b[0]
-            addi $t7, $a2, 4 #address of c[0]
-            slt $t2, $t0, $t1 #a->n < b->n
-            beq $t2, $0, .b_small #if a.n > b->n, jump to b_small
-            move $t2, $t1 #a smaller, set c->n = b->n
-            j .incr_c #jump past next instruction
-  .b_small: move $t2, $t0 #b smaller, set c->n = a->n
-   .incr_c: addi $t2, $t2, 1 #c->n = c->n + 1
-            sw $t2, ($a2) #save c->n value to memory
-
-            #save registers
-            addi $sp, $sp, -12 #save s registers for use below
-            sw $s0, ($sp)
-            sw $s1, 4($sp)
-            sw $s2, 8($sp)
-
-            #main add loop
-            move $t5, $0 #carrying = 0
-            move $t3 $0 #i = 0
-   .loop6:  sll $t4, $t3, 2 #convert i to the byte offset of i
-            move $s0, $0 #a_val = 0
-            slt $t6, $t3, $t0 #check if i is already past a->n
-            beq $0, $t6, .be
-            add $t6, $a0, $t4 #address of a->digits[i] - 4
-            lw $s0, 4($t6) #a_val = a->digits[i]
-      .be:  move $s1, $0 #b_val = 0
-            slt $t6, $t3, $t1 #check if i is already past b->n
-            beq $0, $t6, .c
-            add $t6, $a1, $t4 #address of b->digits[i] - 4
-            lw $s1, 4($t6) #b_val = b->digits[i]
-       .c:  add $s2, $a2, $t4 #address of c->digits[i] - 4
-            add $t6, $s0, $s1 #sum = a_val + b_val
-            add $t6, $t6, $t5 #sum += carrying
-            li $t7, 10 #puts ten in the register
-            div $t6, $t7 #sum / 10 and sum % 10
-            mflo $t5 #carrying = sum / 10
-            mfhi $t6 #get sum % 10
-            sw $t6, 4($s2) #c->digits[i] = sum % 10
-            addi $t3, $t3, 1 #i += 1
-            bne $t3, $t2, .loop6 #jump back up
-            lw $s0, ($sp) #restore the s registers
-            lw $s1, 4($sp)
-            lw $s2, 8($sp)
-            addi $sp, $sp, 12 #reset stack pointer
-            addi $sp, $sp, -4 #shift stack pointer down to save $ra
-            sw $ra, ($sp) #save ra
-            move $t0, $a0 #save address of a
-            move $a0, $a2 #move address of c into the first parameter register
-            jal compress #call compress on (c)
-            move $a0, $t0
-            lw $ra, 0($sp) #reload ra
-            addi $sp, $sp, 4 #move stack pointer back up
-            jr $ra
-
-
-  mult_big:
-  #I'm worried about this algorithm and having the same stack address
-  #for both b and c leading to odd behavior if you're going over it
-  #multiple times.
-
-  #solution. Use temporary bigint. Put that value into  address
-  #c at the very end. Issue is that b will be lost
+#Procedure: mult_big
+#Args: Takes in two bigints (a,b), and a bigint to store the result (c)
+#Return: None (set passed in bigint with result)
+#Description: Follows the algorithm from mersenne.c. Calculate c = a * b
+#             I use temporary bigints to avoid having overwriting the same
+#             addresses. This is necessary for when I have something like
+#             c = a * a, where a is both addresses, or s = s * s, where s
+#             is the same address in all three cases.
+mult_big:
             .text
             addi $sp, $sp, -8 #shift stack pointer down to save $ra
             sw $ra, ($sp) #save ra
@@ -1041,7 +1023,21 @@ add_big:
             addi $sp, $sp, 8 #move stack pointer back up
             jr $ra
 
-pow_big: #a0 has a, #a1 has the result final result holder, #a2 has p
+
+#Procedure: pow_big
+#Args: Takes in address of given bigint (1), address of result int (2), and
+#      p value that serves as the power (3)
+#Return: None (set passed in bigint with result)
+#Description: Follows the algorithm from mersenne.c, using functions previously
+#             defined. Main difference is putting the return value in given c
+#             to make it easier. (c = a^p)
+#             Note: I use temporary holders to avoid
+#             issues where I pass in the same address multiple times
+#             to do the power operation.
+#             Note: I also use an alternating method with b and c. I switch out
+#             my storage address, c, with the value parameter, b, every time
+#             to store the temporary result before another multiplication.
+pow_big:
                 .text
                 addi $sp, $sp, -28 #shift stack pointer down to save $ra and $s0
                 sw $s5, 24($sp)
@@ -1049,7 +1045,7 @@ pow_big: #a0 has a, #a1 has the result final result holder, #a2 has p
                 sw $s3, 16($sp)
                 sw $s2, 12($sp)
                 sw $s1, 8($sp)
-                sw $s0, 4($sp) #save s0 on stack
+                sw $s0, 4($sp) #save callee saved registers on stack
                 sw $ra, ($sp) #save ra for future function call
                 move $s0, $a2 #put p into s0
                 move $s5, $a0 #save the a0 reference
@@ -1100,11 +1096,11 @@ pow_big: #a0 has a, #a1 has the result final result holder, #a2 has p
                 bne $t0, $t4, .set_c_loop
                 move $a1, $s3
                 move $a2, $s0
-                addi $sp, $sp, 1404 #remove both local bigints from stack
-                addi $sp, $sp, 1404
+                addi $sp, $sp, 2808 #remove both local bigints from stack
+                #cleanup
                 lw $s5, 24($sp)
                 lw $s4, 20($sp)
-                lw $s3, 16($sp) #restore stack variables
+                lw $s3, 16($sp) #restore stack saved registers
                 lw $s2, 12($sp)
                 lw $s1, 8($sp)
                 lw $s0, 4($sp)
@@ -1113,7 +1109,14 @@ pow_big: #a0 has a, #a1 has the result final result holder, #a2 has p
                 jr $ra
 
 
-sub_big: #take in a, b, c
+#Procedure: sub_big
+#Args: Takes in two big ints (a,b) to subtract and then one (c) to store.
+#Return: None (set passed in bigint with result)
+#Description: Follows the algorithm from mersenne.c, using functions previously
+#             defined. Main difference is putting the return value in given c
+#             to make it easier. c = a - b. Uses temporary bigint to avoid
+#             issues with reading and writing to the same reference.
+sub_big:
             .text
             lw $t0, ($a0) #saves a.n in t0
             lw $t1, ($a1) #saves b.n to t0
@@ -1159,12 +1162,22 @@ sub_big: #take in a, b, c
             #adjust stack back up
             lw $s0, 4($sp) #reset the stack pointer
             lw $ra, ($sp) #reset $ra
-            addi $sp, $sp, 8
+            addi $sp, $sp, 8 #reset stack pointer
             jr $ra
 
-mod_big: #takes in a, b, and result holder c
+
+#Procedure: mod_big
+#Args: Takes in 3 bigints. a and b (params 1 and 2) are what we will
+#      be doing a % b with. c, the third parameter, is for storing
+#      the result. (c = a % b)
+#Return: nothing, return is put into c
+#Description: Follows the algorithm from mersenne.c. Only twist is
+#             that I copy the return value back into the given c, rather than
+#             return the value. I found it easier to do this way. I also use
+#             temporary bigints to fix the aliasing problem
+mod_big:
             .text
-            addi $sp, $sp, -16
+            addi $sp, $sp, -16 #shift stack pointer down and save registers
             sw $s2, 12($sp)
             sw $s1, 8($sp)
             sw $s0, 4($sp)
@@ -1191,7 +1204,7 @@ mod_big: #takes in a, b, and result holder c
             li $t0, 1 #dput a 1 on a register
             bne $t0, $v0, .leave_srl #leave if return value was not 1
             move $a0, $sp #put b in the first parameter slot
-            jal shift_right
+            jal shift_right #shift b to the right
             move $a0, $s0 #put a back in the first slot for the next compare_big
             move $a1, $sp #put b back in the second slot just in case
             j .srl #jump back up to while loop start
@@ -1203,23 +1216,23 @@ mod_big: #takes in a, b, and result holder c
             #start double for loop
    .w_loop: move $a0, $sp #shift b to first param
             move $a1, $s1 #shift original_b to second param
-            jal compare_big
-            li $t0, -1
+            jal compare_big #compare b and original b
+            li $t0, -1 #prep for equals
             beq $v0, $t0, .leave_out #check if return equals -1, and leave outer loop if so
   .inner_w: move $a1, $sp #set second param to b
             move $a0, $s0 #set first param to a
             jal compare_big #compare the two
-            li $t0, -1
+            li $t0, -1 #load register for use on next line
             beq $v0, $t0, .leave_in #leave inner loop if compare ret was -1
-            move $a0, $s0
+            move $a0, $s0 #set a as the first param
             move $a1, $sp #set b as second param
             move $a2, $s0 #put a in the third slot
-            jal sub_big
-            j .inner_w #restart inner loop
+            jal sub_big #a = a - b
+            j .inner_w #restart inner while loop
  .leave_in: move $a0, $sp #move b to first param
             jal shift_left #call shift_left
-            j .w_loop
-.leave_out: #copy over
+            j .w_loop #jump back up to while loop start
+.leave_out: #copy over result
             move $t0, $0 #set i to 0
             lw $t5, ($s0) #get a.n
             sw $t5, ($s2) #set c.n
@@ -1228,24 +1241,31 @@ mod_big: #takes in a, b, and result holder c
             add $t3, $t1, $s2 #address of c.digits - 4
             lw $t4, 4($t2) #load a.digits[i]
             sw $t4, 4($t3) #store in c.digits[i]
-            addi $t0, $t0, 1
-            bne $t0, $t5, .exit_cpy
+            addi $t0, $t0, 1 #i++
+            bne $t0, $t5, .exit_cpy #restart copy
             addi $sp, $sp, 1404 #remove original_b from stack
             move $a0, $s0 #reset first parameter
             move $a1, $s1 #reset second parameter
             move $a2, $s2 #reset third parameter
-
-            lw $s2, 12($sp)
+            #cleanup
+            lw $s2, 12($sp) #reset callee saved registers
             lw $s1, 8($sp)
             lw $s0, 4($sp)
             lw $ra, ($sp)
-            addi $sp, $sp, 16
+            addi $sp, $sp, 16 #shift stack pointer back up
             jr $ra
 
-LLT: #takes in c and p
+
+#Procedure: LLT
+#Args: Takes in an allocated bigint (c), for holding return value, and a p value
+#      which will be the p in 2^p - 1
+#Return: 1 if prime, 0 if not prime.
+#Description: Follows the algorithm from mersenne.c, using functions previously
+#             defined.
+LLT:
             .text
             #save callee saved registers
-            addi $sp, $sp, -32
+            addi $sp, $sp, -32 #shift stack pointer down
             sw $s7, 28($sp)
             sw $s6, 24($sp)
             sw $s4, 20($sp)
@@ -1253,7 +1273,7 @@ LLT: #takes in c and p
             sw $s2, 12($sp)
             sw $s1, 8($sp)
             sw $s0, 4($sp)
-            sw $ra, ($sp)
+            sw $ra, ($sp) #save all the relevant/used registers
 
             #set up all the stack declared bigints needed
 
@@ -1302,15 +1322,15 @@ LLT: #takes in c and p
             move $a0, $s3 #set first parameter to s
             move $a1, $s3 #set second parameter to s
             move $a2, $s3 #set third parameter to s
-            jal mult_big
+            jal mult_big #multiply s = s * s
             move $a0, $s3 #set first parameter to s
             move $a1, $s2 #set second parameter to two
             move $a2, $s3 #set third parameter to s
-            jal sub_big
+            jal sub_big #s = s - two
             move $a0, $s3 #set first parameter to s
             move $a1, $s6 #set second parameter to Mp
             move $a2, $s3 #set third parameter to s
-            jal mod_big
+            jal mod_big #s = s % Mp
             addi $s4, $s4, 1 #i++
             bne $s4, $s7, .loop9 #restart loop if i != p - 2
             #compare the result to zero
@@ -1319,10 +1339,10 @@ LLT: #takes in c and p
             jal compare_big #call compare big
             beq $0, $v0, .prime #check if the return value was zero
             move $v0, $0 #set return value to zero otherwise
-            j .cleanup
-    .prime: li $v0, 1
-  .cleanup: addi $sp, $sp, 5616
-            lw $ra, ($sp)
+            j .cleanup #jump over prime return value
+    .prime: li $v0, 1 #set prime return value
+  .cleanup: addi $sp, $sp, 5616 #dereference stack allocated bigints (4 of thems)
+            lw $ra, ($sp) #reset all the callee saved registers
             lw $s0, 4($sp)
             lw $s1, 8($sp)
             lw $s2, 12($sp)
@@ -1330,10 +1350,15 @@ LLT: #takes in c and p
             lw $s4, 20($sp)
             lw $s6, 24($sp)
             lw $s7, 28($sp)
-            addi $sp, $sp, 32
+            addi $sp, $sp, 32 #jump stack pointer back up
             jr $ra
 
 
+#Procedure: mersenne_scan
+#Args: None
+#Return: No value, just printing stuff out
+#Description: Run LLT from 2-550 and print out the relevant stuff. Same general
+#             function as main.c from mersenne.c
 mersenne_scan:
             .data
             testing_p:     .asciiz    "Testing p = "
@@ -1402,8 +1427,8 @@ mersenne_scan:
                     syscall #print
                     jal print_new_line #print new line here so I don't have issues
                     #with tons of empty lines printed for non-primes
- .prep_for_restart: addi $s0, $s0, 1
-                    bne $s0, $s1, .loop10
+ .prep_for_restart: addi $s0, $s0, 1 #i++
+                    bne $s0, $s1, .loop10 #jump back up
 
                     #reset stack
                     addi $sp, $sp, 4212 #dereference a,b,c
@@ -1413,5 +1438,5 @@ mersenne_scan:
                     lw $s5, 12($sp)
                     lw $s6, 16($sp)
                     lw $s7, 20($sp)
-                    addi $sp, $sp, 24
-                    jr $ra #exit the function gracefully
+                    addi $sp, $sp, 24 #reset stack pointer
+                    jr $ra #exit the function
